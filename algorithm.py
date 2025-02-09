@@ -10,28 +10,44 @@
 
 """
 import time
+import ast
 
 debug = True
+
+
+lookup = {}
 
 
 def read_file(file_path):
     file = open(file_path)
 
     lines = [line[:-1] for line in file]
-    return lines
+    return [ast.literal_eval(line) for line in lines]
 
 
-def get_answer(row):
-    total = row[0]
+def buy_sell(prices, current_return=0):
+    global lookup
 
-    return total
+    if str(prices) in lookup.keys:
+        max_return = current_return + lookup[str(prices)]
+    elif len(prices) < 2:
+        max_return = current_return
+    elif len(prices) == 2 and prices[1] > prices[0]:
+        max_return = current_return + prices[1] - prices[0]
+    else:
+        max_return = max([buy_sell(prices[1:], current_return)] +
+                         [buy_sell(prices[(i+1):], current_return + prices[i+1] - prices[0]) for i in range(len(prices)) if prices[i+1] > prices[0]])
+
+    lookup[str(prices)] = max_return
+
+    return max_return
 
 
 def main():
     data = read_file('data/prices.txt')
     start = time.time()
     for row in data:
-        answer = get_answer(row)
+        answer = buy_sell(row)
         print(f"The Answer to {row} is '{answer}'")
     end = time.time()
     print(f"time taken: {end - start}")
